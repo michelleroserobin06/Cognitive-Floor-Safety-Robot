@@ -1,0 +1,45 @@
+
+# Python virtual environments
+.venv/
+.venv.venv/
+venv/
+env/
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Datasets (keep local, do not upload to GitHub)
+dataset/
+datasets/
+
+# YOLO pretrained weights and trained model weights
+*.pt
+*.onnx
+*.engine
+
+# Training outputs and experiment runs
+runs/
+wandb/
+mlruns/
+
+# Secrets and local environment configuration
+.env
+.env.*
+!.env.example
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Editor settings
+.vscode/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs and temporary files
+*.log
+*.tmp
