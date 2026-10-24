@@ -1,0 +1,431 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Floor Safety Monitor</title>
+
+  <style>
+    :root {
+      font-family: Arial, sans-serif;
+      color: #182230;
+      background: #f3f6fa;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 28px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin: 0;
+    }
+
+    h2 {
+      font-size: 19px;
+      margin-top: 0;
+    }
+
+    .muted {
+      color: #667085;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .status {
+      background: #e4f7e9;
+      color: #17653a;
+      border-radius: 20px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      background: white;
+      border: 1px solid #e2e7ef;
+      border-radius: 16px;
+      padding: 20px;
+      min-width: 0;
+      box-shadow: 0 4px 16px #16243a08;
+    }
+
+    .video {
+      display: block;
+      width: 100%;
+      min-height: 220px;
+      background: #101820;
+      border-radius: 10px;
+      object-fit: contain;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .stat {
+      padding: 15px;
+      background: #f4f7fb;
+      border-radius: 10px;
+    }
+
+    .number {
+      font-size: 28px;
+      font-weight: bold;
+      margin-top: 6px;
+    }
+
+    .alert-banner {
+      display: none;
+      padding: 16px;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      font-weight: bold;
+      line-height: 1.5;
+    }
+
+    .alert-high {
+      display: block;
+      background: #fff0f0;
+      border: 1px solid #efb2b2;
+      color: #922323;
+    }
+
+    .alert-medium {
+      display: block;
+      background: #fff6e5;
+      border: 1px solid #edcf8d;
+      color: #7a4b00;
+    }
+
+    .alert-review {
+      display: block;
+      background: #eef3ff;
+      border: 1px solid #c4d2f4;
+      color: #294b91;
+    }
+
+    .hazard {
+      border: 1px solid #e5e9f0;
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 10px;
+    }
+
+    .hazard-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-weight: bold;
+    }
+
+    .confidence {
+      color: #3659a8;
+      font-size: 13px;
+    }
+
+    .risk-tag {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 5px 9px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: bold;
+      background: #f0f2f5;
+      color: #394454;
+    }
+
+    .risk-HIGH {
+      background: #ffe1e1;
+      color: #922323;
+    }
+
+    .risk-MEDIUM {
+      background: #fff0cc;
+      color: #7a4b00;
+    }
+
+    .risk-REVIEW {
+      background: #e7edff;
+      color: #294b91;
+    }
+
+    .empty {
+      background: #f4f7fb;
+      padding: 18px;
+      border-radius: 10px;
+      color: #536273;
+      line-height: 1.5;
+    }
+
+    .notice {
+      margin-top: 20px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #667085;
+    }
+
+    @media (max-width: 800px) {
+      body {
+        padding: 15px;
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 23px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div>
+      <h1>Floor Safety Monitor</h1>
+      <p class="muted">Real-time floor hazard detection</p>
+    </div>
+
+    <span class="status" id="status">Connecting...</span>
+  </header>
+
+  <div
+    id="riskAlert"
+    class="alert-banner"
+    role="alert"
+    aria-live="assertive">
+  </div>
+
+  <main class="layout">
+
+    <!-- LIVE CAMERA -->
+    <section class="panel">
+      <h2>Live camera feed</h2>
+
+      <p class="muted">
+        Detected objects are marked with bounding boxes.
+      </p>
+
+      <img
+        class="video"
+        src="/video_feed"
+        alt="Live floor camera feed">
+
+      <div class="stats">
+        <div class="stat">
+          <div class="muted">Current detections</div>
+          <div class="number" id="count">0</div>
+        </div>
+
+        <div class="stat">
+          <div class="muted">Detected classes</div>
+          <div class="number" id="classes">0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DETECTION RESULTS -->
+    <section class="panel">
+      <h2>Detected floor hazards</h2>
+
+      <p class="muted">
+        Results refresh automatically as the camera processes frames.
+      </p>
+
+      <div id="hazards" class="empty">
+        Waiting for camera results...
+      </div>
+
+      <p class="muted" id="updated">
+        Waiting for first detection update.
+      </p>
+    </section>
+
+  </main>
+
+  <p class="notice">
+    <strong>Safety notice:</strong>
+    Risk labels are preliminary, rule-based estimates, not validated
+    child-safety assessments. An empty detection list does not establish
+    that the floor is safe. An adult must independently inspect the floor
+    before a child enters.
+  </p>
+
+  <!-- JAVASCRIPT IS INCLUDED HERE; NO SEPARATE JS FILE NEEDED -->
+  <script>
+    async function refreshDetections() {
+      const statusElement = document.getElementById("status");
+      const hazardsElement = document.getElementById("hazards");
+      const alertBox = document.getElementById("riskAlert");
+
+      try {
+        const response = await fetch("/api/detections", {
+          cache: "no-store"
+        });
+
+        if (!response.ok) {
+          throw new Error("Server response error");
+        }
+
+        const data = await response.json();
+        const items = data.detections || [];
+
+        // Update camera/server status.
+        statusElement.textContent = data.status || "Unknown";
+
+        // Update detection statistics.
+        document.getElementById("count").textContent = items.length;
+
+        const uniqueClasses = new Set(
+          items.map(item => item.label)
+        );
+
+        document.getElementById("classes").textContent =
+          uniqueClasses.size;
+
+        // Categorize detections using backend risk rules.
+        const highRisk = items.filter(
+          item => item.risk === "HIGH"
+        );
+
+        const mediumRisk = items.filter(
+          item => item.risk === "MEDIUM"
+        );
+
+        const needsReview = items.filter(
+          item => item.risk === "REVIEW"
+        );
+
+        // Display the highest priority alert in the current frame.
+        alertBox.className = "alert-banner";
+        alertBox.textContent = "";
+
+        if (highRisk.length > 0) {
+          alertBox.classList.add("alert-high");
+          alertBox.textContent =
+            "HIGH-RISK OBJECT DETECTED: " +
+            [...new Set(highRisk.map(item => item.label))].join(", ") +
+            ". Clear the object before letting the child play on the floor.";
+
+        } else if (mediumRisk.length > 0) {
+          alertBox.classList.add("alert-medium");
+          alertBox.textContent =
+            "POTENTIAL HAZARD: " +
+            [...new Set(mediumRisk.map(item => item.label))].join(", ") +
+            ".Inspect and remove the object before letting the child play.";
+
+        } else if (needsReview.length > 0) {
+          alertBox.classList.add("alert-review");
+          alertBox.textContent =
+            "OBJECT NEEDS REVIEW: " +
+            [...new Set(needsReview.map(item => item.label))].join(", ") +
+            ". Check and review the object before letting the child play on the floor .";
+        }
+
+        // Rebuild the current-frame detection list.
+        hazardsElement.replaceChildren();
+
+        if (items.length === 0) {
+          hazardsElement.className = "empty";
+
+          if (data.status === "Live") {
+            hazardsElement.textContent =
+              "No objects detected in this frame. ";
+          } else {
+            hazardsElement.textContent =
+              "Camera or detection system is not ready.";
+          }
+
+        } else {
+          hazardsElement.className = "";
+
+          items.forEach(item => {
+            const card = document.createElement("div");
+            card.className = "hazard";
+
+            const top = document.createElement("div");
+            top.className = "hazard-top";
+
+            const name = document.createElement("span");
+            name.textContent = item.label;
+
+            const confidence = document.createElement("span");
+            confidence.className = "confidence";
+            confidence.textContent =
+              `${item.confidence}% confidence`;
+
+            top.append(name, confidence);
+
+            const risk = document.createElement("div");
+            const level = item.risk || "REVIEW";
+
+            risk.className = "risk-tag risk-" + level;
+            risk.textContent = "Risk level: " + level;
+
+            const reason = document.createElement("p");
+            reason.className = "muted";
+            reason.textContent =
+              item.reason || "Adult inspection required.";
+
+            card.append(top, risk, reason);
+            hazardsElement.append(card);
+          });
+        }
+
+        // Show when the backend last processed a frame.
+        document.getElementById("updated").textContent =
+          data.updated_at
+            ? "Last processed frame: " +
+              new Date(data.updated_at * 1000).toLocaleTimeString()
+            : "Waiting for first detection update.";
+
+      } catch (error) {
+        statusElement.textContent = "Disconnected";
+        hazardsElement.className = "empty";
+        hazardsElement.textContent =
+          "Cannot retrieve results. Check that the Python server is running.";
+
+        alertBox.className = "alert-banner alert-review";
+        alertBox.textContent =
+          "Detection results unavailable.";
+      }
+    }
+
+    // Fetch immediately, then refresh twice per second.
+    refreshDetections();
+    setInterval(refreshDetections, 500);
+  </script>
+
+</body>
+</html>

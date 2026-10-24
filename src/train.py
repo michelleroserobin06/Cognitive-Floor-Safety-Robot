@@ -15,7 +15,7 @@ model = YOLO("yolo11n.pt")
 # Train the first baseline model.
 model.train(
     data=str(DATA_YAML),
-    epochs=5,
+    epochs=20,
     imgsz=640,
     batch=8,
     workers=2,
